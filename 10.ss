@@ -3,25 +3,26 @@
 ;Assignment#10
 
 ;#1
+;fails one test on the server, not quite sure why
 (define free-vars
-  (lambda (exp)
+  (lambda (expr)
     (cond
-      [(null? exp) '()]
-      [(symbol? exp) (list exp)]
-      [(equal? (car exp) 'lambda)
+      [(null? expr) '()]
+      [(symbol? expr) (list expr)]
+      [(equal? (car expr) 'lambda)
         (cond
-          [(symbol? (caddr exp))
-            (if (not (member (caddr exp) (cadr exp)))
-              (list (caddr exp))
+          [(symbol? (caddr expr))
+            (if (not (member (caddr expr) (cadr expr)))
+              (list (caddr expr))
               '())]
           [else 
-            (if (equal? (caaddr exp) 'lambda)
-              (free-vars (caddr exp))
-              (free-helper (caddr exp) (cadr exp)))])]
+            (if (equal? (caaddr expr) 'lambda)
+              (free-vars (caddr expr))
+              (free-helper (caddr expr) (cadr expr)))])]
       [else
-        (if (and (equal? (car exp) (cadr exp)) (symbol? (car exp)))
-          (list (car exp))
-          (append (free-vars (car exp)) (free-vars (cadr exp))))])))
+        (if (and (equal? (car expr) (cadr expr)) (symbol? (car expr)))
+          (list (car expr))
+          (append (free-vars (car expr)) (free-vars (cadr expr))))])))
 
 (define free-helper
   (lambda (a b)
@@ -29,53 +30,35 @@
       [(null? a) '()]
       [(equal? b (car a)) (free-helper (car a) b)]
       [else (append (list (car a)) (free-helper (cdr a) b))])))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;originally had most of the checks in the recursive helper, found it made it a lot more difficult and unorganized than 
-;just moving the checks to the main function
-;old checks follow, they also failed the last test
-      ;[(symbol? exp) (list exp)]
-      ;[(and (symbol? (car exp)) (not (equal? (car exp) 'lambda))) (free-helper (cadr exp) (append free (list (car exp))))]
-      ;[(equal? (car exp) 'lambda) 
-      ;  (let ([var (cadr exp)][body (caddr exp)])
-      ;    (if (list? body)
-      ;      ;(append free (filter (lambda (x) (not (equal? x 'lambda))) (filter (lambda (x) (not (equal? x (car var)))) body)))
-      ;      (append free (filter (lambda (x) (not (equal? x 'lambda))) (filter (lambda (x) (not (equal? x (car var)))) (list body))))
-      ;      ;(append free (filter (lambda (x) (not (equal? x 'lambda))) (filter (lambda (x) (not (equal? x (car var)))) (free-helper body free))))
-      ;    ) 
-      ;  )
-      ;]
-;    )
-;  )
-;)
 
 (define bound-vars
-(lambda (exp)
+(lambda (expr)
     (cond
-      [(null? exp) '()]
-      [(symbol? exp) '()]
-      [(equal? (car exp) 'lambda)
+      [(null? expr) '()]
+      [(symbol? expr) '()]
+      [(equal? (car expr) 'lambda)
         (cond
-          [(symbol? (caddr exp))
-            (if (not (member (caddr exp) (cadr exp)))
+          [(symbol? (caddr expr))
+            (if (not (member (caddr expr) (cadr expr)))
               '()
-              (list (caddr exp))
+              (list (caddr expr))
               )
           ]
-          [(equal? (caaddr exp) 'lambda)
-            (if (member (caddr (caddr exp)) (cadr exp))
-              (list (caddr (caddr exp)))
-              (bound-vars (caddr exp))
+          [(equal? (caaddr expr) 'lambda)
+            (if (member (caddr (caddr expr)) (cadr expr))
+              (list (caddr (caddr expr)))
+              (bound-vars (caddr expr))
             )
           ]
-          [(equal? (caadr (caddr exp)) 'lambda)
-            (bound-vars (cadr (caddr exp)))
+          [(equal? (caadr (caddr expr)) 'lambda)
+            (bound-vars (cadr (caddr expr)))
           ]
           [else 
-            (bound-helper (caddr exp) (cadr exp))])]
+            (bound-helper (caddr expr) (cadr expr))])]
       [else
-        (if (symbol? (car exp))
-            (bound-vars (cadr exp))
-            (append (bound-vars (car exp)) (bound-vars (cadr exp)))
+        (if (symbol? (car expr))
+            (bound-vars (cadr expr))
+            (append (bound-vars (car expr)) (bound-vars (cadr expr)))
         )])))
 
 (define bound-helper
@@ -87,26 +70,26 @@
 
 ;#2
 (define occurs-free?
-  (lambda (var exp)
+  (lambda (var expr)
     (cond
-      [(null? exp) #f]
-      [(symbol? exp) (eqv? var exp)]
-      [(equal? (car exp) 'lambda) 
-       (and (not (member var (cadr exp))) (occurs-free? var (caddr exp)))
+      [(null? expr) #f]
+      [(symbol? expr) (eqv? var expr)]
+      [(equal? (car expr) 'lambda) 
+       (and (not (member var (cadr expr))) (occurs-free? var (caddr expr)))
       ]
       
-      [(equal? (car exp) 'set!)
-        (equal? (caddr exp) var)
+      [(equal? (car expr) 'set!)
+        (equal? (caddr expr) var)
       ]
-      [(equal? (car exp) 'let)
-        (occurs-free? var (let->application exp))
+      [(equal? (car expr) 'let)
+        (occurs-free? var (let->application expr))
       ]
-      [(equal? (car exp) 'let*)
-        (occurs-free? var (let*->let exp))
+      [(equal? (car expr) 'let*)
+        (occurs-free? var (let*->let expr))
       ]
-      [(equal? (car exp) 'if) (if (member var (cadr exp)) #t (occurs-free? var (caddr exp)))] 
-      [else (or (occurs-free? var  (car exp))
-                (occurs-free? var (cdr exp)))
+      [(equal? (car expr) 'if) (if (member var (cadr expr)) #t (occurs-free? var (caddr expr)))] 
+      [else (or (occurs-free? var  (car expr))
+                (occurs-free? var (cdr expr)))
       ])))
 
 (define parameters
@@ -140,22 +123,110 @@
       (append (list (quote let) (list (car lst))) (list (let-helper (cdr lst) x))))))
 
 (define occurs-bound?
-  (lambda (var exp)
+  (lambda (var expr)
     (cond
-      [(null? exp) #f]
-      [(symbol? exp) #f]
-      [(eqv? (car exp) 'lambda)
-       (or (occurs-bound? var (caddr exp))
-           (and (not (not (member var (cadr exp))))
-                (occurs-free? var (caddr exp))))
+      [(null? expr) #f]
+      [(symbol? expr) #f]
+      [(eqv? (car expr) 'lambda)
+       (or (occurs-bound? var (caddr expr))
+           (and (not (not (member var (cadr expr))))
+                (occurs-free? var (caddr expr))))
       ]
-      [(equal? (car exp) 'let) (occurs-bound? var (let->application exp))]
-      [(equal? (car exp) 'let*) (occurs-bound? var (let*->let exp))]
-      [(equal? (car exp) 'if)
-        (or (occurs-bound? var (caddr exp)) (occurs-bound? var (cadddr exp)))
+      [(equal? (car expr) 'let) (occurs-bound? var (let->application expr))]
+      [(equal? (car expr) 'let*) (occurs-bound? var (let*->let expr))]
+      [(equal? (car expr) 'if)
+        (or (occurs-bound? var (caddr expr)) (occurs-bound? var (cadddr expr)))
       ]
-      [else (or (occurs-bound? var  (car exp))
-                (occurs-bound? var (cdr exp)))
+      [else (or (occurs-bound? var  (car expr))
+                (occurs-bound? var (cdr expr)))
       ])))
+;#3
+;took a lot of help and time to figure this out. Spent a large amount bug fixing, probably need to find a better way to do this in case it is tested later
+;had to fully redo lexical and unlexical after thinking about a better mindset
+(define lexical-address
+  (lambda (expr)
+    (lexical-address-helper expr)))
 
+(define lexical-address-helper
+  (lambda (expr)
+    (let recur ([expr expr] [lex-env (list)])
+      (cond 
+        [(null? expr) '()]
+        [(symbol? expr) (get-lex-at-env expr lex-env)]
+        [(equal? (car expr) 'lambda) (list 'lambda (cadr expr) (recur (caddr expr) (cons (cadr expr) lex-env)))]
+        [(equal? (car expr) 'let) (application->let (recur (let->application expr) lex-env))] 
+        [(equal? (car expr) 'set!) (list 'set! (cadr expr) (recur (caddr expr) lex-env))]
+        [(equal? (car expr) 'if) (list 'if (recur (cadr expr) lex-env) (recur (caddr expr) lex-env) (recur (cadddr expr) lex-env))]
+        [else (map (lambda (e) (recur e lex-env)) expr)]))))
 
+(define get-lex-at-env 
+  (lambda (symbol env)
+    (let recur ([symbol symbol] [env env] [depth 0])
+      (cond
+        [(null? env) (list ': 'free symbol)]
+        [(member symbol (car env))
+          (list ': depth (find-symbol symbol (car env)))
+        ]
+        [else (recur symbol (cdr env) (+ 1 depth))]))))
+
+(define find-symbol
+  (lambda (symbol lst)
+    (let recur-find ([symbol symbol] [lst lst][pos 0])
+      (cond
+        [(null? lst) '()]
+        [(equal? (car lst) symbol) pos]
+        [else (recur-find symbol (cdr lst) (+ pos 1))]))))
+
+(define application->let
+  (lambda (lst)
+    (if (null? lst)
+      (lst)
+      (append (append (list 'let) (list (let-params (cadar lst) (cdr lst) (list)) (caddr (car lst))))))))
+
+(define let-params
+  (lambda (x y acc)
+    (cond
+      [(null? x) acc]
+      [else (let-params (cdr x) (cdr y) (append acc (list (list (car x) (car y)))))])))
+
+(define find-depth-in-list
+  (lambda (symbol bounds max depth)
+    (cond 
+      [(null? bounds) max]
+      [(and (null? max) (equal? (caar bounds) symbol) (> depth (cadar bounds))) 
+        (find-depth-in-list symbol (cdr bounds) (car bounds) depth)
+      ]
+      [(and (equal? (caar bounds) symbol) (> depth (cadar bounds)) (< (- depth (cadar bounds)) (- depth (cadr max))))
+        (find-depth-in-list symbol (cdr bounds) (car bounds) depth)
+      ]
+      [else (find-depth-in-list symbol (cdr bounds) max depth)])))
+
+(define get-var 
+  (lambda (varlist x y)
+    (cond
+      [(null? varlist) '()]
+      [(equal? x 0) (list-ref (car varlist) y)]
+      [else (get-var (cdr varlist) (- x 1) y)])))
+
+(define get-sym-at-lex
+  (lambda (address lex-env)
+    (let sym-helper ([depth (cadr address)] [position (caddr address)] [lex-env lex-env])
+      (list-ref (list-ref lex-env depth) position))))
+
+(define un-lexical-address
+  (lambda (expr)
+    (un-lexical-helper expr)))
+
+(define un-lexical-helper
+  (lambda (expr)
+    (let recur ([expr expr] [lex-env (list)])
+      (cond 
+        [(null? expr) '()]
+        [(and (equal? (car expr) ':) (equal? (cadr expr) 'free)) (caddr expr)]
+        ;colon number number?
+        [(equal? (car expr) ':) (get-sym-at-lex expr lex-env)]
+        [(equal? (car expr) 'lambda) (list 'lambda (cadr expr) (recur (caddr expr) (cons (cadr expr) lex-env)))]
+        [(equal? (car expr) 'let) (application->let (recur (let->application expr) lex-env))] 
+        [(equal? (car expr) 'set!) (list 'set! (cadr expr) (recur (caddr expr) lex-env))]
+        [(equal? (car expr) 'if) (list 'if (recur (cadr expr) lex-env) (recur (caddr expr) lex-env) (recur (cadddr expr) lex-env))]
+        [else (map (lambda (e) (recur e lex-env)) expr)]))))
