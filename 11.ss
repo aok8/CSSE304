@@ -78,10 +78,16 @@
 				(leaf-node (value_L)
 					(cases bintree right
 						(leaf-node (value_R)
+							;case: an interior node with two leaf nodes 
+							;list the sum of the two leaf nodes and a list of the symbol of the tree and the sumw 
 							(let ([sum (+ value_L value_R)])
 								(list sum (list sym sum))))
 
 						(interior-node (sym_R left_R right_R)
+							;case: an interior node with a leaf node on the left and another interior node on the right
+							;compare the sum with the sum of the interior nodee -
+							;if interior node sum is greater than full sum, list full sum and list of symbol of interior node and its sum
+							;if full sum is greater, list full sum and list of symbol of tree and full sum
 							(let* ([result_R (interior-helper right)][sum (+ value_L (cadr (cadr result_R)))])
 								(cond
 									[(>= sum (cadr (cadr result_R))) (list sum (list sym sum))]
@@ -90,6 +96,7 @@
 				(interior-node (sym_L left_L right_L)
 					(cases bintree right
 						(leaf-node (value_R)
+							;case: an interior node with an interior node on the left and a leaf node on the right
 							(let* ([result_L (interior-helper left)] [sum (+ value_R (car result_L))])
 								(cond
 									[(>= sum (cadr (cadr result_L))) (list sum (list sym sum))]
@@ -109,3 +116,49 @@
 									[else (if (>= (cadr (cadr result_L)) (cadr (cadr result_R)))
 											(list sum (cadr result_L))
 											(list sum (cadr result_R)))]))))))))))
+
+;#4
+;STARTING CODE
+;------------------------------------------------
+(load "chez-init.ss") ; put this file in the same folder, or add a pathname
+
+; This is a parser for simple Scheme expressions, 
+; such as those in EOPL, 3.1 thru 3.3.
+
+; You will want to replace this with your parser that includes more expression types, more options for these types, and error-checking.
+
+(define-datatype expression expression?
+  [var-exp
+   (id symbol?)]
+  [lambda-exp
+   (id symbol?)
+   (body expression?)]
+  [app-exp
+   (rator expression?)
+   (rand expression?)])
+
+; Procedures to make the parser a little bit saner.
+(define 1st car)
+(define 2nd cadr)
+(define 3rd caddr)
+
+(define parse-exp         
+  (lambda (datum)
+    (cond
+     [(symbol? datum) (var-exp datum)]
+     [(number? datum) (lit-exp datum)]
+     [(pair? datum)
+      (cond
+       [(eqv? (car datum) 'lambda)
+	(lambda-exp (car (2nd  datum))
+		    (parse-exp (3rd datum)))]
+      [else (app-exp (parse-exp (1st datum))
+		     (parse-exp (2nd datum)))])]
+     [else (eopl:error 'parse-exp "bad expression: ~s" datum)])))
+; An auxiliary procedure that could be helpful.
+(define var-exp?
+ (lambda (x)
+   (cases expression x
+     [var-exp (id) #t]
+     [else #f])))
+(var-exp? (var-exp 'a))
