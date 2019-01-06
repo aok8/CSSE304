@@ -1,13 +1,14 @@
 ;Alain Kouassi
 ;CSSE304
 ;Assignment11
-;#1a
 
+;#1a
 (define-syntax my-let
 	(syntax-rules ()
 		[(_ ((x v) ...) e1 e2 ...)
 			((lambda (x ...) e1 e2 ...)
 				v ...)]
+		;if named let, use letrec
 		[(_ name ((x v) ...) e1 e2 ...)
 			(letrec ((name (lambda (x ...) e1 e2 ...)))
 				(name v ...))]))
@@ -19,6 +20,7 @@
 		[(_ e1) e1]
 		[(_ e1 e2 ...)
 			(let ([temp e1])
+				;if the first expression is true then the whole or will return true
 				(if temp temp (my-or e2 ...)))]))
 ;#1c
 ;used define-syntax ++ to fully understand how += should be done
@@ -32,11 +34,13 @@
 		[(_ x)
 			x]
 		[(_ x e1)
-			(let ([temp x ] [e e1])
-				e
+			(let ([temp x ] )
+				;need to save x to be returned 
+				e1
 				(return-first x))]
 		[(_ x e1 e2 ...)
 			(let ([temp x])
+				;need to save x to be returned
 				e1 
 				(return-first temp e2 ...))]))
 ;#2
@@ -65,10 +69,9 @@
 	(lambda (tree)
 		(cases bintree tree
 		(leaf-node (value) (list value))
-		(interior-node (sym left right) (caadr (interior-helper tree)))
-		)
-	)
-)
+		;helper will return a list: sum of the entire tree, list of the symbol of max sum and its sum 
+		(interior-node (sym left right) (caadr (interior-helper tree))))))
+
 (define interior-helper
 	(lambda (tree)
 		(cases bintree tree
@@ -85,24 +88,30 @@
 
 						(interior-node (sym_R left_R right_R)
 							;case: an interior node with a leaf node on the left and another interior node on the right
-							;compare the sum with the sum of the interior nodee -
+							;compare the sum with the sum of the interior node -
 							;if interior node sum is greater than full sum, list full sum and list of symbol of interior node and its sum
 							;if full sum is greater, list full sum and list of symbol of tree and full sum
 							(let* ([result_R (interior-helper right)][sum (+ value_L (cadr (cadr result_R)))])
 								(cond
 									[(>= sum (cadr (cadr result_R))) (list sum (list sym sum))]
-									[else (list sum (cadr result_R))]))))
-				)
+									[else (list sum (cadr result_R))])))))
+
 				(interior-node (sym_L left_L right_L)
 					(cases bintree right
 						(leaf-node (value_R)
 							;case: an interior node with an interior node on the left and a leaf node on the right
+							;compare the sum of this tree with the sum of the interior node -
+							;if interior node sum is greater than full sum, list full sum and list of symbol of interior node and its sum
+							;if full sum is greater, list full sum and list of symbol of tree and full sum
 							(let* ([result_L (interior-helper left)] [sum (+ value_R (car result_L))])
 								(cond
 									[(>= sum (cadr (cadr result_L))) (list sum (list sym sum))]
 									[else (list sum (cadr result_L))])))
 
 						(interior-node (sym_R left_R right_R)
+							;case: an interior node with an interior node on the left and another on the right
+							;compare the sum of this tree with both sums of the interior nodes
+							;list the sum of the tree, list of the largest sum and its symbol
 							(let* ([result_L (interior-helper left)] 
 									[result_R (interior-helper right)] 
 									[sum (+ (car result_L) (car result_R))])
