@@ -110,7 +110,10 @@
 
 (define sn-list-reverse-cps
 	(lambda (ls k)
-	((cps-snlist-recur '() rev-cps rev-cps)ls k)
+	((cps-snlist-recur 
+		'() 
+		rev-cps
+		rev-cps) ls k)
 ))
 
 (define sn-list-depth-cps
@@ -142,6 +145,8 @@
 	)
 )
 
+
+;Answer to question: It's not as efficient because there is no way to memoize the recursive calls inside of the proc called. 
 ;2
 (define memoize
 	(lambda (f hash equiv?)
