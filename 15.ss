@@ -70,14 +70,22 @@
 (define +-cps
 	(lambda (a b k)
 		(apply-k k (+ a b))))
+
 (define rev-cps
 	(lambda (a b k)
 		(apply-k k (append b (list a)))))
+
 (define max+1-cps
 	(lambda (a b k)
 		(apply-k k (max (+ a 1) b))
 	)
 )
+(define max-cps
+	(lambda (a b k)
+		(apply-k k (max a b))
+	)
+)
+
 
 
 (define cps-snlist-recur
@@ -85,7 +93,7 @@
 		(letrec ([helper (lambda (ls k)
 				(if (null? ls)
 					(apply-k k base-value)
-					(let check ([c (car ls)])
+					(trace-let test ([c (car ls)])
 						(if (or (pair? c) (null? c))
 							(list-proc-cps (helper c k) (helper (cdr ls) (make-k (lambda (x) x))) (make-k (lambda (x) (apply-k k x))))
 							(item-proc-cps c (helper (cdr ls) (make-k (lambda (x) x))) (make-k (lambda (x) (apply-k k x))))
@@ -109,8 +117,8 @@
 	(lambda (ls k)
 		((cps-snlist-recur 
 			1
-			(lambda (x y z) y)
-			(lambda (x y z) (max+1-cps x y z))
+			max-cps
+			max+1-cps
 		) ls k)
 	)
 )
@@ -153,7 +161,19 @@
 						)	
 						result))))))
 
-;3
-;(define subst-leftmost
-;	()
-;)
+;took a second to get, i implemented leftmost in a way where using let-values wasn't neccessary since i was returning 1 value constantly
+(define subst-leftmost
+	(lambda (new old slist equality-pred?)
+		(let checker ([slist slist])
+			(cond 
+				[(null? slist) '()]
+				[(and (symbol? (car slist)) (equality-pred? old (car slist))) (cons new (cdr slist))]
+				[(symbol? (car slist)) 
+					(let ([end (checker (cdr slist))])
+						(if (null? end)
+							(values '())
+							(values (cons (car slist) end))))]
+				[else (let ([start (checker (car slist))])
+				 	(if (null? start)
+				 		(values (cons (car slist) (checker (cdr slist))))
+				 		(values (cons start (cdr slist)))))]))))
