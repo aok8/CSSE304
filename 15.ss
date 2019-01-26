@@ -93,7 +93,7 @@
 		(letrec ([helper (lambda (ls k)
 				(if (null? ls)
 					(apply-k k base-value)
-					(trace-let test ([c (car ls)])
+					(let ([c (car ls)])
 						(if (or (pair? c) (null? c))
 							(list-proc-cps (helper c k) (helper (cdr ls) (make-k (lambda (x) x))) (make-k (lambda (x) (apply-k k x))))
 							(item-proc-cps c (helper (cdr ls) (make-k (lambda (x) x))) (make-k (lambda (x) (apply-k k x))))
@@ -110,14 +110,16 @@
 )
 
 (define sn-list-reverse-cps
-	(cps-snlist-recur '() rev-cps rev-cps)
-)
+	(lambda (ls k)
+	((cps-snlist-recur '() rev-cps rev-cps)ls k)
+))
 
 (define sn-list-depth-cps
 	(lambda (ls k)
 		((cps-snlist-recur 
 			1
-			max-cps
+			;max-cps
+			(lambda (x y z) y)
 			max+1-cps
 		) ls k)
 	)
