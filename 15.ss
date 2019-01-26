@@ -87,7 +87,6 @@
 )
 
 
-
 (define cps-snlist-recur
 	(lambda (base-value item-proc-cps list-proc-cps)
 		(letrec ([helper (lambda (ls k)
@@ -123,28 +122,21 @@
 			max+1-cps
 		) ls k)
 	)
-)
-(define occurs
-	(lambda (a b val)
-		(if (null? b)
-			val
-			(if (eqv? a (car b)) 
-				(occurs a (cdr b) (+ 1 val))
-				(occurs a (cdr b) val)
-			)
-		)
-	)
-)
+) 
+
 (define occur-cps
-	(lambda (a b k)
-		(apply-k k (occurs a b 0))
+	(lambda (a b k item)
+		(if (equal? a item)
+			(apply-k k (+ 1 b))
+			(apply-k k b)
+		)
 	)
 )
 (define sn-list-occur-cps
 	(lambda (item ls k)
 		((cps-snlist-recur
 			0
-			(lambda (x y z) (apply-k k (if (equal? x item) (+ 1 y) y)))
+			(lambda (x y z) (occur-cps x y z item))
 			(lambda  (x y z)  (apply-k z (+ x y)))
 		) ls k)
 	)
